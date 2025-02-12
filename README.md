@@ -59,7 +59,3 @@ python main.py
 ## 🔑 Note  
 
 📢 If you want to use the **Gemini AI integration**, you'll need to provide a valid **Gemini API key** when prompted. 🔐  
-=======
-# car_price_predic
-An AI-powered application that predicts car prices using machine learning and optionally integrates with Google's Gemini AI for enhanced accuracy.
->>>>>>> 61503e2336d96f78595922794ece9ad9d17c9084
