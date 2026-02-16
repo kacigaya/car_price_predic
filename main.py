@@ -10,8 +10,11 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 import matplotlib.pyplot as plt
 import asyncio
+from datetime import datetime
 from gemini_integration import setup_gemini, get_gemini_prediction, combine_predictions
 
+MIN_YEAR = 1900
+CURRENT_YEAR = datetime.now().year
 
 def prepare_data(csv_file):
     data = pd.read_csv(csv_file)
@@ -22,7 +25,7 @@ def prepare_data(csv_file):
     data['Condition'] = data['Condition'].fillna('Good')  
     data['Owners'] = data['Owners'].fillna(data['Owners'].median())  
     
-    data['Age'] = 2025 - data['Year']
+    data['Age'] = CURRENT_YEAR - data['Year']
     data['Mileage_log'] = np.log1p(data['Mileage'])
     X = data.drop(['Id', 'Price', 'Year', 'Mileage'], axis=1)
     y = np.log(data['Price'])
@@ -73,7 +76,7 @@ async def predict_car_price(make, model, mileage, condition, age, trained_model,
     statistical_price = max(0, statistical_price)
     
     if gemini_model:
-        year = 2025 - age
+        year = CURRENT_YEAR - age
         gemini_price = await get_gemini_prediction(gemini_model, make, model, year, mileage, condition)
         return combine_predictions(statistical_price, gemini_price)
     
@@ -87,8 +90,8 @@ def validate_input(make, model, year, mileage, condition, data):
     if model not in data['Model'].unique():
         return f"Erreur : Le modèle '{model}' n'est pas dans la base de données."
     
-    if year < 1900 or year > 2025:
-        return "Erreur : L'année de fabrication doit être entre 1900 et 2025."
+    if year < MIN_YEAR or year > CURRENT_YEAR:
+        return f"Erreur : L'année de fabrication doit être entre {MIN_YEAR} et {CURRENT_YEAR}."
     
     if mileage < 0:
         return "Erreur : Le kilométrage ne peut pas être négatif."
@@ -108,12 +111,17 @@ def predict_trend(data):
     trend_model = LinearRegression()
     trend_model.fit(X_trend, y_trend)
     
-    future_years = np.arange(2025, 2031).reshape(-1, 1)
+    future_years = np.arange(CURRENT_YEAR, CURRENT_YEAR + 6).reshape(-1, 1)
     future_prices = trend_model.predict(future_years)
     
     plt.figure(figsize=(10, 6))
     plt.scatter(trend_data['Year'], trend_data['Price'], label="Prix moyen par année")
-    plt.plot(future_years, future_prices, color='red', label="Tendance future (2025-2030)")
+    plt.plot(
+        future_years,
+        future_prices,
+        color='red',
+        label=f"Tendance future ({CURRENT_YEAR}-{CURRENT_YEAR + 5})"
+    )
     plt.title("Tendances des prix des voitures en fonction des années")
     plt.xlabel("Année")
     plt.ylabel("Prix moyen (€)")
@@ -194,7 +202,7 @@ async def main():
         print(validation_error)
         return  
     
-    age = 2025 - year
+    age = CURRENT_YEAR - year
     
     # Initialize Gemini model (you'll need to set your API key)
     api_key = input("Enter your Gemini API key (press Enter to skip Gemini integration): ").strip()
