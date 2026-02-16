@@ -10,7 +10,11 @@ import numpy as np
 import tkinter as tk
 from tkinter import ttk, messagebox
 import asyncio
+from datetime import datetime
 from gemini_integration import setup_gemini, get_gemini_prediction, combine_predictions
+
+MIN_YEAR = 1900
+CURRENT_YEAR = datetime.now().year
 
 def prepare_data(csv_file):
     data = pd.read_csv(csv_file)
@@ -21,7 +25,7 @@ def prepare_data(csv_file):
     data['Condition'] = data['Condition'].fillna('Good')
     data['Owners'] = data['Owners'].fillna(data['Owners'].median())
 
-    data['Age'] = 2025 - data['Year']
+    data['Age'] = CURRENT_YEAR - data['Year']
     data['Mileage_log'] = np.log1p(data['Mileage'])
     X = data.drop(['Id', 'Price', 'Year', 'Mileage'], axis=1)
     y = np.log(data['Price'])
@@ -70,7 +74,7 @@ async def predict_car_price(make, model, mileage, condition, age, trained_model,
     statistical_price = max(0, statistical_price)
 
     if gemini_model:
-        year = 2025 - age
+        year = CURRENT_YEAR - age
         gemini_price = await get_gemini_prediction(gemini_model, make, model, year, mileage, condition)
         return combine_predictions(statistical_price, gemini_price)
 
@@ -99,11 +103,14 @@ def run_gui():
             if condition not in ['Excellent', 'Good', 'Fair', 'Poor']:
                 messagebox.showerror("Erreur", "Veuillez choisir un état valide.")
                 return
-            if year < 1900 or year > 2025:
-                messagebox.showerror("Erreur", "L'année doit être comprise entre 1900 et 2025.")
+            if year < MIN_YEAR or year > CURRENT_YEAR:
+                messagebox.showerror(
+                    "Erreur",
+                    f"L'année doit être comprise entre {MIN_YEAR} et {CURRENT_YEAR}."
+                )
                 return
 
-            age = 2025 - year
+            age = CURRENT_YEAR - year
             
             # Initialize Gemini model if API key is provided
             api_key = api_key_entry.get().strip()

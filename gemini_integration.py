@@ -1,13 +1,9 @@
-import google.generativeai as genai
-import pandas as pd
-import numpy as np
-from typing import Dict, Any
+import asyncio
+from typing import Any
+from google import genai
 
-# Configure Gemini API
 def setup_gemini(api_key: str):
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-pro')
-    return model
+    return genai.Client(api_key=api_key)
 
 def format_car_data(make: str, model: str, year: int, mileage: float, condition: str) -> str:
     return f"""Analyze the following car details and predict a fair market price:
@@ -23,8 +19,14 @@ async def get_gemini_prediction(model: Any, make: str, car_model: str, year: int
                               mileage: float, condition: str) -> float:
     try:
         prompt = format_car_data(make, car_model, year, mileage, condition)
-        response = await model.generate_content(prompt)
-        # Extract the numeric price from the response
+        response = await asyncio.to_thread(
+            model.models.generate_content,
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
+        if not response.text:
+            print("Error getting Gemini prediction: Empty response from Gemini API.")
+            return None
         price_str = response.text.strip().replace('€', '').replace('$', '').replace(',', '')
         return float(price_str)
     except Exception as e:
