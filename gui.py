@@ -11,12 +11,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import asyncio
 from datetime import datetime
-from gemini_integration import setup_gemini, get_gemini_prediction, combine_predictions
+from gemini_integration import SetupGemini, GetGeminiPrediction, CombinePredictions
 
 MIN_YEAR = 1900
 CURRENT_YEAR = datetime.now().year
 
-def prepare_data(csv_file):
+def PrepareData(csv_file):
     data = pd.read_csv(csv_file)
     
     data['Year'] = data['Year'].fillna(data['Year'].median())
@@ -32,7 +32,7 @@ def prepare_data(csv_file):
     
     return X, y, data
 
-def create_model():
+def CreateModel():
     numeric_features = ['Mileage_log', 'Age']
     categorical_features = ['Make', 'Model', 'Condition']
 
@@ -56,7 +56,7 @@ def create_model():
         ('regressor', GradientBoostingRegressor(n_estimators=500, learning_rate=0.1, random_state=42))
     ])
 
-async def predict_car_price(make, model, mileage, condition, age, trained_model, gemini_model=None):
+async def PredictCarPrice(make, model, mileage, condition, age, trained_model, gemini_model=None):
     input_data = pd.DataFrame({
         'Make': [make],
         'Model': [model],
@@ -75,18 +75,18 @@ async def predict_car_price(make, model, mileage, condition, age, trained_model,
 
     if gemini_model:
         year = CURRENT_YEAR - age
-        gemini_price = await get_gemini_prediction(gemini_model, make, model, year, mileage, condition)
-        return combine_predictions(statistical_price, gemini_price)
+        gemini_price = await GetGeminiPrediction(gemini_model, make, model, year, mileage, condition)
+        return CombinePredictions(statistical_price, gemini_price)
 
     return statistical_price
 
-X, y, data = prepare_data('data.csv')
+X, y, data = PrepareData('data.csv')
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = create_model()
+model = CreateModel()
 model.fit(X_train, y_train)
 
-def run_gui():
-    async def predict_async():
+def RunGui():
+    async def PredictAsync():
         try:
             make = make_entry.get()
             model_name = model_entry.get()
@@ -114,16 +114,16 @@ def run_gui():
             
             # Initialize Gemini model if API key is provided
             api_key = api_key_entry.get().strip()
-            gemini_model = setup_gemini(api_key) if api_key else None
+            gemini_model = SetupGemini(api_key) if api_key else None
             
-            predicted_price = await predict_car_price(make, model_name, mileage, condition, age, model, gemini_model)
+            predicted_price = await PredictCarPrice(make, model_name, mileage, condition, age, model, gemini_model)
             result_label.config(text=f"Prix estimé : {predicted_price:.2f} €")
 
         except Exception as e:
             messagebox.showerror("Erreur", f"Une erreur est survenue : {str(e)}")
     
-    def on_predict():
-        asyncio.run(predict_async())
+    def OnPredict():
+        asyncio.run(PredictAsync())
 
     root = tk.Tk()
     root.title("Prédiction du Prix des Voitures")
@@ -153,7 +153,7 @@ def run_gui():
     api_key_entry = tk.Entry(root)
     api_key_entry.grid(row=5, column=1, padx=10, pady=10)
 
-    predict_button = tk.Button(root, text="Prédire", command=on_predict)
+    predict_button = tk.Button(root, text="Prédire", command=OnPredict)
     predict_button.grid(row=6, column=0, columnspan=2, pady=20)
 
     result_label = tk.Label(root, text="", font=("Arial", 14))
@@ -162,4 +162,4 @@ def run_gui():
     root.mainloop()
 
 if __name__ == "__main__":
-    run_gui()
+    RunGui()
