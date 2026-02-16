@@ -11,12 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import asyncio
 from datetime import datetime
-from gemini_integration import setup_gemini, get_gemini_prediction, combine_predictions
+from gemini_integration import SetupGemini, GetGeminiPrediction, CombinePredictions
 
 MIN_YEAR = 1900
 CURRENT_YEAR = datetime.now().year
 
-def prepare_data(csv_file):
+def PrepareData(csv_file):
     data = pd.read_csv(csv_file)
     
     data['Year'] = data['Year'].fillna(data['Year'].median())
@@ -33,7 +33,7 @@ def prepare_data(csv_file):
     return X, y, data
 
 
-def create_model():
+def CreateModel():
     numeric_features = ['Mileage_log', 'Age']
     categorical_features = ['Make', 'Model', 'Condition']
     
@@ -58,7 +58,7 @@ def create_model():
     ])
 
 
-async def predict_car_price(make, model, mileage, condition, age, trained_model, gemini_model=None):
+async def PredictCarPrice(make, model, mileage, condition, age, trained_model, gemini_model=None):
     input_data = pd.DataFrame({
         'Make': [make],
         'Model': [model],
@@ -77,13 +77,13 @@ async def predict_car_price(make, model, mileage, condition, age, trained_model,
     
     if gemini_model:
         year = CURRENT_YEAR - age
-        gemini_price = await get_gemini_prediction(gemini_model, make, model, year, mileage, condition)
-        return combine_predictions(statistical_price, gemini_price)
+        gemini_price = await GetGeminiPrediction(gemini_model, make, model, year, mileage, condition)
+        return CombinePredictions(statistical_price, gemini_price)
     
     return statistical_price
 
 
-def validate_input(make, model, year, mileage, condition, data):
+def ValidateInput(make, model, year, mileage, condition, data):
     if make not in data['Make'].unique():
         return f"Erreur : La marque '{make}' n'est pas dans la base de données."
     
@@ -102,7 +102,7 @@ def validate_input(make, model, year, mileage, condition, data):
     return None 
 
 
-def predict_trend(data):
+def PredictTrend(data):
     trend_data = data.groupby('Year')['Price'].mean().reset_index()
     
     X_trend = trend_data['Year'].values.reshape(-1, 1)
@@ -134,7 +134,7 @@ def predict_trend(data):
         print(f"Année {year}: {price:.2f} €")
 
 
-def generate_visualizations(data):
+def GenerateVisualizations(data):
     plt.figure(figsize=(8, 6))
     data['Condition'].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=90)
     plt.title("Répartition des états des véhicules")
@@ -160,7 +160,7 @@ def generate_visualizations(data):
     plt.show()
 
 
-def generate_owners_visualization(data):
+def GenerateOwnersVisualization(data):
     owners_by_make = data.groupby('Make')['Owners'].sum().reset_index()
     
     owners_by_make = owners_by_make.sort_values(by='Owners', ascending=False)
@@ -175,20 +175,20 @@ def generate_owners_visualization(data):
     plt.show()
 
 
-async def main():
-    X, y, data = prepare_data('data.csv')
+async def Main():
+    X, y, data = PrepareData('data.csv')
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    model = create_model()
+    model = CreateModel()
     model.fit(X_train, y_train)
     
     y_pred = model.predict(X_test)
     mse = mean_squared_error(np.exp(y_test), np.exp(y_pred))
     print(f"Model Mean Squared Error: {mse:.2f}")
     
-    generate_visualizations(data)
-    generate_owners_visualization(data)  
-    predict_trend(data)  
+    GenerateVisualizations(data)
+    GenerateOwnersVisualization(data)
+    PredictTrend(data)
     
     print("\nBienvenue dans l'application de prédiction de prix de voiture")
     make = input("Entrez la marque de la voiture: ")
@@ -197,7 +197,7 @@ async def main():
     mileage = float(input("Entrez le kilométrage de la voiture: "))
     condition = input("Entrez l'état de la voiture (Excellent, Good, Fair, Poor): ")
     
-    validation_error = validate_input(make, model_name, year, mileage, condition, data)
+    validation_error = ValidateInput(make, model_name, year, mileage, condition, data)
     if validation_error:
         print(validation_error)
         return  
@@ -206,9 +206,9 @@ async def main():
     
     # Initialize Gemini model (you'll need to set your API key)
     api_key = input("Enter your Gemini API key (press Enter to skip Gemini integration): ").strip()
-    gemini_model = setup_gemini(api_key) if api_key else None
+    gemini_model = SetupGemini(api_key) if api_key else None
     
-    predicted_price = await predict_car_price(
+    predicted_price = await PredictCarPrice(
         make, model_name, mileage, condition, age, model, gemini_model
     )
     
@@ -216,4 +216,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(Main())
