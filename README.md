@@ -5,7 +5,7 @@ An application that predicts car prices using machine learning and optionally in
 ## Prerequisites
 
 Requirements:
-- Python 3.10 or higher
+- Python 3.10 or higher (3.11+ recommended)
 - pip
 
 ## Installation
@@ -72,12 +72,12 @@ The following updates were applied and should be used as coding guidelines:
 ### Changes implemented
 
 1. Replaced hard-coded year values with runtime constants (`CURRENT_YEAR` and `MIN_YEAR`) in:
-   - `/home/runner/work/car_price_predic/car_price_predic/main.py`
-   - `/home/runner/work/car_price_predic/car_price_predic/gui.py`
+   - `main.py`
+   - `gui.py`
 2. Upgraded dependency baselines in:
-   - `/home/runner/work/car_price_predic/car_price_predic/requirements.txt`
+   - `requirements.txt`
 3. Migrated Gemini integration from deprecated `google-generativeai` to `google-genai` in:
-   - `/home/runner/work/car_price_predic/car_price_predic/gemini_integration.py`
+   - `gemini_integration.py`
 4. Rewrote this README to remove emojis and improve maintainability.
 
 ### Best practices for cleaner, maintainable code

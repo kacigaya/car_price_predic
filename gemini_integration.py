@@ -21,10 +21,11 @@ async def get_gemini_prediction(model: Any, make: str, car_model: str, year: int
         prompt = format_car_data(make, car_model, year, mileage, condition)
         response = await asyncio.to_thread(
             model.models.generate_content,
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=prompt
         )
         if not response.text:
+            print("Error getting Gemini prediction: Empty response from Gemini API.")
             return None
         price_str = response.text.strip().replace('€', '').replace('$', '').replace(',', '')
         return float(price_str)
